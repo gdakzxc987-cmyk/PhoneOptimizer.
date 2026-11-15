@@ -17,7 +17,15 @@ jobs:
         with:
           gradle-version: 8.13
       - name: Build debug APK
-        run: gradle assembleDebug
+        run: |
+          set +e
+          gradle assembleDebug --console=plain --stacktrace > build.log 2>&1
+          code=$?
+          if [ $code -ne 0 ]; then
+            echo "::error title=GRADLE::$(grep -A8 'What went wrong' build.log | head -12 | sed 's/%/%25/g' | paste -sd '|')"
+            echo "::error title=KOTLIN::$(grep -E '^e: ' build.log | head -10 | sed 's/%/%25/g' | paste -sd '|')"
+          fi
+          exit $code
       - uses: actions/upload-artifact@v4
         with:
           name: PhoneOptimizer-debug-apk
